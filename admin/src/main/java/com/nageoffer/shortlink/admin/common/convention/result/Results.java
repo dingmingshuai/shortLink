@@ -1,6 +1,7 @@
 package com.nageoffer.shortlink.admin.common.convention.result;
 
 import com.nageoffer.shortlink.admin.common.convention.errorcode.BaseErrorCode;
+import com.nageoffer.shortlink.admin.common.convention.exception.AbstractException;
 
 import java.util.Optional;
 
@@ -39,18 +40,18 @@ public class Results {
                 .setMessage(BaseErrorCode.SERVICE_ERROR.message());
     }
 
-//    /**
-//     * 通过 {@link AbstractException} 构建失败响应
-//     */
-//    public static Result<Void> failure(AbstractException abstractException) {
-//        String errorCode = Optional.ofNullable(abstractException.getErrorCode())
-//                .orElse(BaseErrorCode.SERVICE_ERROR.code());
-//        String errorMessage = Optional.ofNullable(abstractException.getErrorMessage())
-//                .orElse(BaseErrorCode.SERVICE_ERROR.message());
-//        return new Result<Void>()
-//                .setCode(errorCode)
-//                .setMessage(errorMessage);
-//    }
+    /**
+     * 通过 {@link AbstractException} 构建失败响应
+     */
+    public static Result<Void> failure(AbstractException abstractException) {
+        String errorCode = Optional.ofNullable(abstractException.getErrorCode())//errorCode存在，则设置
+                .orElse(BaseErrorCode.SERVICE_ERROR.code());//不存在，errorCode设置为BaseErrorCode.SERVICE_ERROR.code()“B000001”
+        String errorMessage = Optional.ofNullable(abstractException.getErrorMessage())
+                .orElse(BaseErrorCode.SERVICE_ERROR.message());
+        return new Result<Void>()
+                .setCode(errorCode)
+                .setMessage(errorMessage);
+    }
 
     /**
      * 通过 errorCode、errorMessage 构建失败响应
