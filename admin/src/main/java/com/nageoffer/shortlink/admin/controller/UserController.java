@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor//@RequiredArgsConstructor是Lombok的一个注解，简化对@Autowired书写,使用构造器注入
 public class UserController {
-    //1、声明的变量必须加上final修饰
+    //1、声明的变量必须加上final修饰，加入final表示为常量，初始化得时候必须注入（@RequiredArgsConstructor）
     //2、基于构造方法为属性赋值，容器通过调用类的构造方法将其进行依赖注入
     private final UserService userService;//使用构造器注入Bean
 
