@@ -10,8 +10,13 @@ package com.nageoffer.shortlink.admin.dao.entity;
  */
 
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户持久层实体
@@ -54,4 +59,22 @@ public class UserDO  {
      * 注销时间戳
      */
     private Long deletionTime;
+
+    /**
+     * 生成时间
+     */
+    @TableField(fill = FieldFill.INSERT)//mybatisPlus的MetaObjectHandler接口自动注入
+    private LocalDateTime createTime;
+
+    /**
+     * 修改时间
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)//mybatisPlus的MetaObjectHandler接口自动注入
+    private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除 0:未删除 1:已删除
+     */
+    @TableField(fill = FieldFill.INSERT)//mybatisPlus的MetaObjectHandler接口自动注入
+    private Integer delFlag;
 }
