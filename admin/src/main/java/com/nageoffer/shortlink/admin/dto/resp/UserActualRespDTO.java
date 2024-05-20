@@ -13,7 +13,7 @@ import lombok.Data;
  * @Version 1.0
  */
 @Data
-public class UserRespDTO {
+public class UserActualRespDTO {
     /**
      * id
      */
@@ -30,9 +30,8 @@ public class UserRespDTO {
     private String realName;
 
     /**
-     * 手机号 敏感字段上自定义序列化器
+     * 手机号
      */
-    @JsonSerialize(using = PhoneDesensitizationSerializer.class)
     private String phone;
 
     /**
