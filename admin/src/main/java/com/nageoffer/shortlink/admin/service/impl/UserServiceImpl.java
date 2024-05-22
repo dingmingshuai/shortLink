@@ -14,11 +14,15 @@ import com.nageoffer.shortlink.admin.dto.resp.UserRespDTO;
 import com.nageoffer.shortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.redisson.RedissonScript;
+import org.redisson.api.LockOptions;
 import org.redisson.api.RBloomFilter;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 
+import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 import static com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum.USER_NAME_EXIST;
 import static com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum.USER_SAVE_ERROR;
 
@@ -35,6 +39,8 @@ import static com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum.USER_
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
     //配合@RequiredArgsConstructor 使用构造器方法进行注入
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
+    //使用Redission的分布式锁
+    private final RedissonClient redissonClient;
     @Override
     public UserRespDTO getUserByUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
@@ -59,12 +65,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if(!hasUsername(requestParam.getUsername())){
             throw new ClientException(USER_NAME_EXIST);
         }
-        int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));
-        if(inserted<1){
-            throw new ClientException(USER_SAVE_ERROR);
+        //通过分布式锁，锁定用户名进行串行执行，防止恶意请求利用未注册用户名将请求打到数据库。
+        RLock lock = redissonClient.getLock(LOCK_USER_REGISTER_KEY+requestParam.getUsername());
+        try {
+            if (lock.tryLock()){
+                int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));
+                if(inserted<1){
+                    throw new ClientException(USER_SAVE_ERROR);
+                }
+                //对用户名使用布隆过滤器加载缓存，判断用户是否存在
+                userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+                return;//获取到锁，结束
+            }
+            throw  new ClientException(USER_NAME_EXIST);//没获取到锁，抛出异常：用户名已存在
+        } finally {
+            lock.unlock();
         }
-        //对用户名使用布隆过滤器加载缓存，判断用户是否存在
-        userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
     }
 
 }
