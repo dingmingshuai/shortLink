@@ -38,7 +38,7 @@ public class UserTransmitFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws ServletException, IOException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String requestURI =httpServletRequest.getRequestURI();
-        if(!Objects.equals(requestURI,"/api/short-link/admin/v1/user/login")){//忽略登录url
+        if(!Objects.equals(requestURI,"/api/short-link/admin/v1/user/login")){//忽略登录uri
             String username = httpServletRequest.getHeader("username");
             String token = httpServletRequest.getHeader("token");
             Object userInfoJsonStr = stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token);
