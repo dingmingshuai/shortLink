@@ -126,6 +126,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         String uuid = UUID.randomUUID().toString();
         //void put(H key, HK hashKey, HV value);
         stringRedisTemplate.opsForHash().put(USER_LOGIN_KEY + requestParam.getUsername(), uuid, JSON.toJSONString(userDO));
+        System.out.println(USER_LOGIN_KEY + requestParam.getUsername());
+        System.out.println(uuid);
         //设置过期时间
         stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.DAYS);
         return new UserLoginRespDTO(uuid);
@@ -133,6 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public Boolean checkLogin(String username,String token) {
+        System.out.println(stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token));
         return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token) != null;
     }
 

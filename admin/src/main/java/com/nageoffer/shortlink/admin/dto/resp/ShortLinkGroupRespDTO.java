@@ -1,5 +1,7 @@
 package com.nageoffer.shortlink.admin.dto.resp;
 
+import lombok.Data;
+
 /**
  * ClassName:ShortLinkGroupRespDTO
  * Description:
@@ -8,6 +10,7 @@ package com.nageoffer.shortlink.admin.dto.resp;
  * @Create2024/5/27 16:30
  * @Version 1.0
  */
+@Data
 public class ShortLinkGroupRespDTO {
     /**
      * 分组标识

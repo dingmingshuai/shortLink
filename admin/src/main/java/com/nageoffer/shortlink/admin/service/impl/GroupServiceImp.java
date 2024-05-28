@@ -3,16 +3,17 @@ package com.nageoffer.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
 import com.nageoffer.shortlink.admin.dao.entity.GroupDO;
 import com.nageoffer.shortlink.admin.dao.mapper.GroupMapper;
+import com.nageoffer.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.nageoffer.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import com.nageoffer.shortlink.admin.service.GroupService;
 import com.nageoffer.shortlink.admin.toolkit.RandomGenerator;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
         GroupDO groupDO =GroupDO.builder()
                 .gid(gid)
                 .sortOrder(0)//默认排序0
+                .username(UserContext.getUsername())
                 .name(groupName)
                 .build();//GroupDO添加了@Builder注解，可以使用链式建造
         baseMapper.insert(groupDO);
@@ -48,13 +50,23 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
 
     @Override
     public List<ShortLinkGroupRespDTO> listGroup() {
-        //TODO 从当前上下文获取用户名
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getDelFlag, 0)//确保是生效中的短链接分组
-                .eq(GroupDO::getUsername, null)
+                .eq(GroupDO::getUsername, UserContext.getUsername())
                 .orderByDesc(List.of(GroupDO::getSortOrder, GroupDO::getUpdateTime));//先按SortOrder字段排序，再按更新时间排序
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
         return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
+    }
+
+    @Override
+    public void updateGroup(ShortLinkGroupUpdateReqDTO requstParam) {
+        LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .eq(GroupDO::getGid, requstParam.getGid())
+                .eq(GroupDO::getDelFlag, 0);
+        GroupDO groupDO = new GroupDO();
+        groupDO.setName(requstParam.getName());
+        baseMapper.update(groupDO,updateWrapper);
     }
 
     private boolean NohasGid(String gid){
@@ -62,7 +74,8 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getGid,gid)
                 //TODO 设置用户名
-                .eq(GroupDO::getUsername, null);
+                .eq(GroupDO::getUsername, UserContext.getUsername());
+        System.out.println(UserContext.getUsername());
         GroupDO NohasGroupFlag = baseMapper.selectOne(queryWrapper);
         return NohasGroupFlag == null;//返回true，则当前未创建该分组id
     }
