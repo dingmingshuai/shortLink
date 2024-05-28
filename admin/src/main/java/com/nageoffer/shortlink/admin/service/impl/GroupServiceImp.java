@@ -69,6 +69,21 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
         baseMapper.update(groupDO,updateWrapper);
     }
 
+    /**
+     *  删除短链接分组，使用逻辑删除（软删除），修改DelFlag标识即可
+     * @param gid 短链接分组标识
+     */
+    @Override
+    public void deleteGroup(String gid) {
+        LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .eq(GroupDO::getGid, gid)
+                .eq(GroupDO::getDelFlag, 0);
+        GroupDO groupDO = new GroupDO();
+        groupDO.setDelFlag(1);
+        baseMapper.update(groupDO,updateWrapper);
+    }
+
     private boolean NohasGid(String gid){
         //保证当前短链接分组id唯一
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
