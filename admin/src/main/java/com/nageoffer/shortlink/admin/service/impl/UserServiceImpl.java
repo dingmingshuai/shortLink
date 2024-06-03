@@ -84,7 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                     if(inserted<1){
                         throw new ClientException(USER_SAVE_ERROR);
                     }
-                }catch (DuplicateKeyException ex){
+                }catch (DuplicateKeyException ex){//重复注册
                     throw new ClientException(USER_EXIST);
                 }
 
