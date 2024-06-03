@@ -93,7 +93,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
                 //对用户名使用布隆过滤器加载缓存，判断用户是否存在
                 userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
-                groupService.saveGroup("默认分组");
+                groupService.saveGroup(requestParam.getUsername(),"默认分组");
                 return;//获取到锁，结束
             }
             throw  new ClientException(USER_NAME_EXIST);//没获取到锁，抛出异常：用户名已存在

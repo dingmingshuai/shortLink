@@ -18,6 +18,8 @@ import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRes
 import com.nageoffer.shortlink.admin.service.GroupService;
 import com.nageoffer.shortlink.admin.toolkit.RandomGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.Opt;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,18 +42,23 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
     };
     @Override
     public void saveGroup(String groupName) {
+        saveGroup(UserContext.getUsername(),groupName);
+    }
+
+    @Override
+    public void saveGroup(String userName, String groupName) {
         String gid;
         while(true){
-             gid = RandomGenerator.generateRandom();
-             if (NohasGid(gid)){//当前未创建该分组id
-                 break;//跳出
-             }
+            gid = RandomGenerator.generateRandom();
+            if (NohasGid(userName,gid)){//当前未创建该分组id
+                break;//跳出
+            }
         }
         //创建并保存该分组id
         GroupDO groupDO =GroupDO.builder()
                 .gid(gid)
                 .sortOrder(0)//默认排序0
-                .username(UserContext.getUsername())
+                .username(userName)
                 .name(groupName)
                 .build();//GroupDO添加了@Builder注解，可以使用链式建造
         baseMapper.insert(groupDO);
@@ -121,13 +128,11 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
         });
     }
 
-    private boolean NohasGid(String gid){
+    private boolean NohasGid(String username, String gid){
         //保证当前短链接分组id唯一
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getGid,gid)
-                //TODO 设置用户名
-                .eq(GroupDO::getUsername, UserContext.getUsername());
-        System.out.println(UserContext.getUsername());
+                .eq(GroupDO::getUsername, Optional.ofNullable(username).orElse(UserContext.getUsername()));
         GroupDO NohasGroupFlag = baseMapper.selectOne(queryWrapper);
         return NohasGroupFlag == null;//返回true，则当前未创建该分组id
     }
