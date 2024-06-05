@@ -5,19 +5,13 @@ import com.google.common.collect.Lists;
 import com.nageoffer.shortlink.admin.common.convention.exception.ClientException;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.util.StringUtils;
-
-import java.io.CharConversionException;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,14 +33,16 @@ public class UserTransmitFilter implements Filter {
     private final StringRedisTemplate stringRedisTemplate;
     private static final List<String> IGNORE_URI = Lists.newArrayList(
             "/api/short-link/admin/v1/user/login",
-            "/api/short-link/admin/v1/user/has-username"
+            "/api/short-link/admin/v1/user/has-username",
+            "/api/short-link/admin/v1/title"
     );
 
+    @SneakyThrows
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws ServletException, IOException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String requestURI =httpServletRequest.getRequestURI();
-        if(!IGNORE_URI.equals(requestURI)){//不在忽略登录uri名单里，需要认证token
+        if(!IGNORE_URI.contains(requestURI)){//不在忽略登录uri名单里，需要认证token
             String method = httpServletRequest.getMethod();
             if(!(Objects.equals(requestURI,"/api/short-link/admin/v1/user")&&Objects.equals(method,"POST"))){//还需要忽略检查用户是否登录的url
                 String username = httpServletRequest.getHeader("username");
