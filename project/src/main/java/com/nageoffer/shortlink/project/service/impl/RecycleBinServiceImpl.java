@@ -8,10 +8,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.shortlink.project.dao.entity.ShortLinkDO;
 import com.nageoffer.shortlink.project.dao.mapper.ShortLinkMapper;
-import com.nageoffer.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
-import com.nageoffer.shortlink.project.dto.req.RecycleBinSaveReqDTO;
-import com.nageoffer.shortlink.project.dto.req.ShortLinkPageReqDTO;
-import com.nageoffer.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
+import com.nageoffer.shortlink.project.dto.req.*;
 import com.nageoffer.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.RecycleBinService;
 import com.nageoffer.shortlink.project.toolkit.LinkUtil;
@@ -82,5 +79,15 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
         baseMapper.update(shortLinkDO,updateWrapper);
         //从回收站恢复后,还需要删除防止缓存穿透的空白key
         stringRedisTemplate.delete(String.format(GOTO_IS_NULL_SHORT_LINK_KEY,requestParam.getFullShortUrl()));
+    }
+
+    @Override
+    public void removeRecycleBin(RecycleBinRemoveReqDTO requestParam) {
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getEnableStatus, 1)//查询回收站里的短链接
+                .eq(ShortLinkDO::getDelFlag, 0);
+        baseMapper.delete(updateWrapper);//已配置mybatis-plus软删除  delFlag = 1
     }
 }
