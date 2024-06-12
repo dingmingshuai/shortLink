@@ -23,3 +23,11 @@ mybatis-plus:
       logic-delete-field: delFlag
       logic-delete-value: 1
       logic-not-delete-value: 0
+short-link:
+  domain:
+    default: nurl.ink:8001
+  stats:
+    locale:
+      amap-key: d103e5c9ca44a109bbfbf1fe01f0e39b
+
+
