@@ -81,6 +81,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkOsStatsMapper linkOsStatsMapper;//统计访问短链接操作系统
     private final LinkBrowserStatsMapper linkBrowserStatsMapper;//统计访问短链接浏览器信息
     private final LinkAccessLogsMapper linkAccessLogsMapper;//统计短链接访问日志（高频ip）信息
+    private final LinkDeviceStatsMapper linkDeviceStatsMapper;//统计访问短链接设备信息
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapKey;//高德API密钥
@@ -371,6 +372,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .fullShortUrl(fullShortUrl)
                         .build();
                 linkAccessLogsMapper.insert(linkAccessLogsDO);
+                LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
+                        .device(LinkUtil.getDevice(((HttpServletRequest) request)))
+                        .cnt(1)
+                        .gid(gid)
+                        .fullShortUrl(fullShortUrl)
+                        .date(new Date())
+                        .build();
+                linkDeviceStatsMapper.shortLinkDeviceState(linkDeviceStatsDO);
             }
         } catch(Throwable ex){
             log.error("短链接访问量异常",ex);
