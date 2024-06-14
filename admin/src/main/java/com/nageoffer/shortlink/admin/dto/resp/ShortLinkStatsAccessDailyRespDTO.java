@@ -1,0 +1,39 @@
+package com.nageoffer.shortlink.admin.dto.resp;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+
+import java.util.Date;
+
+/**
+ * ClassName:ShortLinkStatsAccessDailyRespDTO
+ * Description:
+ * 短链接基础访问监控响应参数
+ * @Author DubPAN
+ * @Create2024/6/14 14:23
+ * @Version 1.0
+ */
+@Data
+public class ShortLinkStatsAccessDailyRespDTO {
+
+    /**
+     * 日期
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private Date date;
+
+    /**
+     * 访问量
+     */
+    private Integer pv;
+
+    /**
+     * 独立访客数
+     */
+    private Integer uv;
+
+    /**
+     * 独立IP数
+     */
+    private Integer uip;
+}

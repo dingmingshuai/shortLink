@@ -8,6 +8,8 @@ import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinSaveReqDTO;
+import com.nageoffer.shortlink.admin.dto.req.ShortLinkStatsReqDTO;
+import com.nageoffer.shortlink.admin.dto.resp.ShortLinkStatsRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
@@ -15,6 +17,7 @@ import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -125,4 +128,14 @@ public interface ShortLinkRemoteService {
     default void removeRecycleBin(RecycleBinRemoveReqDTO requestParam){
         HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/recycle-bin/remove", JSON.toJSONString(requestParam));
     };
+
+    default Result<ShortLinkStatsRespDTO>  oneShortLinkStats(ShortLinkStatsReqDTO requestParam){
+        Map<String,Object> requestMap = new HashMap<>();
+        requestMap.put("fullShortUrl",requestParam.getFullShortUrl());
+        requestMap.put("gid",requestParam.getGid());
+        requestMap.put("startDate",requestParam.getStartDate());
+        requestMap.put("endDate",requestParam.getEndDate());
+        String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats",requestMap);
+        return JSON.parseObject(resultBodyStr , new TypeReference<>() {});
+    }
 }
