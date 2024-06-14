@@ -3,8 +3,12 @@ package com.nageoffer.shortlink.project.dao.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.nageoffer.shortlink.project.dao.entity.LinkAccessStatsDO;
 import com.nageoffer.shortlink.project.dao.entity.LinkLocaleStatsDO;
+import com.nageoffer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 /**
  * ClassName:LinkLocaleStatsMapper
@@ -24,4 +28,19 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
             "ON DUPLICATE KEY UPDATE cnt = cnt +  #{linkLocaleStats.cnt};")
     void shortLinkLocaleState(@Param("linkLocaleStats") LinkLocaleStatsDO linkLocaleStatsDO);
 
+    /**
+     * 根据短链接获取指定日期内基础监控数据
+     */
+    @Select("SELECT " +
+            "    province, " +
+            "    SUM(cnt) AS cnt " +
+            "FROM " +
+            "    t_link_locale_stats " +
+            "WHERE " +
+            "    full_short_url = #{param.fullShortUrl} " +
+            "    AND gid = #{param.gid} " +
+            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
+            "GROUP BY " +
+            "    full_short_url, gid, province;")
+    List<LinkLocaleStatsDO> listLocaleByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
 }
