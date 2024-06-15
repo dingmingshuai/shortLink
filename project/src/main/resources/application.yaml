@@ -18,6 +18,9 @@ spring:
       suffix: .html
 #配置mybatis-plus软删除
 mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    mapper-locations: classpath:mapper/*.xml
   global-config:
     db-config:
       logic-delete-field: delFlag
