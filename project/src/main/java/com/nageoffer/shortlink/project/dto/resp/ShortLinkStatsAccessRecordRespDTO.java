@@ -1,46 +1,31 @@
-package com.nageoffer.shortlink.project.dao.entity;
+package com.nageoffer.shortlink.project.dto.resp;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.nageoffer.shortlink.project.common.database.BaseDO;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 /**
- * ClassName:LinkAccessLogsDO
+ * ClassName:ShortLinkStatsAccessRecordRespDTO
  * Description:
- * 访问日志监控实体
+ * 短链接监控访问记录响应参数
  * @Author DubPAN
- * @Create2024/6/13 15:08
+ * @Create2024/6/14 19:30
  * @Version 1.0
  */
 @Data
-@TableName("t_link_access_logs")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LinkAccessLogsDO extends BaseDO {
+public class ShortLinkStatsAccessRecordRespDTO {
 
     /**
-     * id
+     * 访客类型
      */
-    private Long id;
-
-    /**
-     * 完整短链接
-     */
-    private String fullShortUrl;
-
-    /**
-     * 分组标识
-     */
-    private String gid;
-
-    /**
-     * 用户信息
-     */
-    private String user;
+    private String uvType;
 
     /**
      * 浏览器
@@ -71,5 +56,15 @@ public class LinkAccessLogsDO extends BaseDO {
      * 地区
      */
     private String locale;
-}
 
+    /**
+     * 用户信息
+     */
+    private String user;
+
+    /**
+     * 访问时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
+}

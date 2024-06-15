@@ -1,5 +1,6 @@
 package com.nageoffer.shortlink.admin.remote;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
@@ -8,15 +9,8 @@ import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinSaveReqDTO;
-import com.nageoffer.shortlink.admin.dto.req.ShortLinkStatsReqDTO;
-import com.nageoffer.shortlink.admin.dto.resp.ShortLinkStatsRespDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
-import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import com.nageoffer.shortlink.admin.remote.dto.req.*;
+import com.nageoffer.shortlink.admin.remote.dto.resp.*;
 
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -137,5 +131,20 @@ public interface ShortLinkRemoteService {
         requestMap.put("endDate",requestParam.getEndDate());
         String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats",requestMap);
         return JSON.parseObject(resultBodyStr , new TypeReference<>() {});
+    }
+
+    /**
+     * 访问单个短链接指定时间内监控访问记录数据
+     *
+     * @param requestParam 访问短链接监控访问记录请求参数
+     * @return 短链接监控访问记录信息
+     */
+    default Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        Map<String, Object> stringObjectMap = BeanUtil.beanToMap(requestParam, false, true);
+        stringObjectMap.remove("orders");
+        stringObjectMap.remove("records");
+        String resultBodyStr = HttpUtil.get("http://127.0.0.1:8001/api/short-link/v1/stats/access-record", stringObjectMap);
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
     }
 }
