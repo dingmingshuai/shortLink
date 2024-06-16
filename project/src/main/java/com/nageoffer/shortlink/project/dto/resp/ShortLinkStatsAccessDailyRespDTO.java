@@ -1,7 +1,10 @@
 package com.nageoffer.shortlink.project.dto.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
@@ -14,13 +17,15 @@ import java.util.Date;
  * @Version 1.0
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ShortLinkStatsAccessDailyRespDTO {
 
     /**
      * 日期
      */
-    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
-    private Date date;
+    private String date;
 
     /**
      * 访问量
