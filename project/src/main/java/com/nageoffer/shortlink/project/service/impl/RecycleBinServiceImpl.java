@@ -41,6 +41,7 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
                 .eq(ShortLinkDO::getGid, requestParam.getGid())
                 .eq(ShortLinkDO::getEnableStatus, 0)
+                .eq(ShortLinkDO::getDelTime, 0L)
                 .eq(ShortLinkDO::getDelFlag, 0);
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                 .enableStatus(1)  //保存到回收站:修改启用状态为1 ，暂停使用
@@ -88,6 +89,10 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .eq(ShortLinkDO::getGid, requestParam.getGid())
                 .eq(ShortLinkDO::getEnableStatus, 1)//查询回收站里的短链接
                 .eq(ShortLinkDO::getDelFlag, 0);
-        baseMapper.delete(updateWrapper);//已配置mybatis-plus软删除  delFlag = 1
+        ShortLinkDO delShortLinkDO = ShortLinkDO.builder()
+                .delTime(System.currentTimeMillis())
+                .build();
+        delShortLinkDO.setDelFlag(1);
+        baseMapper.update(delShortLinkDO, updateWrapper);//已配置mybatis-plus软删除  delFlag = 1
     }
 }
