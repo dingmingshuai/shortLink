@@ -27,8 +27,9 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 short-link:
+  #project设置的跳转接口是8001
   domain:
-    default: nurl.ink:8001
+    default: dmsurl.ink:8001
   stats:
     locale:
       amap-key: d103e5c9ca44a109bbfbf1fe01f0e39b

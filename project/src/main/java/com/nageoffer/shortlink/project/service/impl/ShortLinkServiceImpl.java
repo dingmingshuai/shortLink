@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.Week;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
@@ -87,12 +88,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapKey;//高德API密钥
+
+    @Value("short-link.domain.default")
+    private String createShortLinkDefaultDomain;//创建短链接时的默认域名
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
-        String fullShortUrl =requestParam.getDomain()+"/"+shortLinkSuffix;//短链接->(协议):域名/后缀 (此处域名包含协议http/https)
+        String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain)
+                .append("/")
+                .append(shortLinkSuffix)
+                .toString();//短链接->(协议):域名/后缀 (此处域名包含协议http/https)
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
-                .domain(requestParam.getDomain())
+                .domain(createShortLinkDefaultDomain)
                 .originUrl(requestParam.getOriginUrl())
                 .gid(requestParam.getGid())
                 .createdType(requestParam.getCreatedType())
@@ -211,7 +218,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 //        http://example.com:8080/app/somepage.jsp 访问时就是"example.com"
 //        http://192.168.0.1:8080/app/somepage.jsp 访问时就是"192.168.0.1"
         String serverName = request.getServerName();
-        String fullShortUrl = serverName+ "/" +shortUri;
+        String serverPort = Optional.of(request.getServerPort())
+                .filter(each -> !Objects.equals(each, 80))
+                .map(String::valueOf)
+                .map(each -> ":" + each)
+                .orElse("");//端口号返回80，直接返回空(后续直接拼接createShortLinkDefaultDomain)
+        String fullShortUrl = serverName + serverPort + "/" + shortUri;
         //先查缓存
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         //缓存里面有->直接跳转
