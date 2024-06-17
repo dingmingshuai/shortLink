@@ -20,6 +20,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.shortlink.project.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.project.common.convention.exception.ServiceException;
 import com.nageoffer.shortlink.project.common.enums.VailDateTypeEnum;
+import com.nageoffer.shortlink.project.config.GotoDomainWhiteListConfiguration;
 import com.nageoffer.shortlink.project.dao.entity.*;
 import com.nageoffer.shortlink.project.dao.mapper.*;
 import com.nageoffer.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
@@ -90,6 +91,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkStatsTodayMapper linkStatsTodayMapper;//统计今日访问短链接信息
     private final LinkStatsTodayService linkStatsTodayService;
     private final DelayShortLinkStatsProducer delayShortLinkStatsProducer;
+    private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;//短链接跳转白名单
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapKey;//高德API密钥
@@ -98,6 +100,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private String createShortLinkDefaultDomain;//创建短链接时的默认域名
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());//验证原始链接是否在白名单内
         String shortLinkSuffix = generateSuffix(requestParam);
         String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain)
                 .append("/")
@@ -182,6 +185,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Transactional(rollbackFor = Exception.class)//先删除，再新增，需要事务维持数据一致性
     @Override
     public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());//验证原始链接是否在白名单内
         //短链接库使用gid作为分片键进行分库，若gid被修改，则不能按照原来的规则通过gid找到这条记录，因此需要把原记录删除，然后再把新gid作为gid创建一条新的短链接记录
         LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                 .eq(ShortLinkDO::getGid, requestParam.getOriginGid())
@@ -640,5 +644,20 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             }
         }
         return null;
+    }
+
+    private void verificationWhitelist(String originUrl) {
+        Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
+        if (enable == null || !enable) {
+            return;
+        }
+        String domain = LinkUtil.extractDomain(originUrl);
+        if (StrUtil.isBlank(domain)) {
+            throw new ClientException("跳转链接填写错误");
+        }
+        List<String> details = gotoDomainWhiteListConfiguration.getDetails();
+        if (!details.contains(domain)) {
+            throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
+        }
     }
 }
