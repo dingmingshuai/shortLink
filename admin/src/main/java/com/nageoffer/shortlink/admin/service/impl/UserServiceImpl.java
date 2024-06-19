@@ -1,6 +1,7 @@
 package com.nageoffer.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -29,6 +30,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
@@ -120,9 +122,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null){
             throw new ClientException("用户不存在！");
         }
-        Boolean hasLogin =stringRedisTemplate.hasKey("login"+requestParam.getUsername());
-        if(hasLogin!=null && hasLogin){
-            throw new ClientException("用户已登录！");
+        //存储用户名对应的键下存储了多个登录会话（每个登录会话可能包含不同的token或其他信息）允许用户做多端登录
+        Map<Object ,Object> hasLoginMap = stringRedisTemplate.opsForHash().entries("login_" + requestParam.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) {
+            String token = hasLoginMap.keySet().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElseThrow(() -> new ClientException("用户登录错误"));
+            return new UserLoginRespDTO(token);
         }
         //存储登录用户信息到redis(生成token)
         /**
@@ -138,7 +145,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         System.out.println(USER_LOGIN_KEY + requestParam.getUsername());
         System.out.println(uuid);
         //设置过期时间
-        stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.DAYS);
+        stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES);
         return new UserLoginRespDTO(uuid);
     }
 
