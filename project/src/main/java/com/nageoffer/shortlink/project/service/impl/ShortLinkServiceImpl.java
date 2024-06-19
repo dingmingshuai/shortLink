@@ -621,7 +621,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             originUrl+=System.currentTimeMillis();//相当于加盐，生成新的shortUri，降低哈希冲突概率
             shortUri=HashUtil.hashToBase62(originUrl);
             //使用布隆过滤器防止直接查询数据库,验证短链接是否冲突（重复）
-            if(!shortUricachePenetrationBloomFilter.contains(requestParam.getDomain() + "/" + shortUri)){
+            if(!shortUricachePenetrationBloomFilter.contains(createShortLinkDefaultDomain + "/" + shortUri)){
                 break;//新的ShortUri，不冲突，保留
             }
             costomGenerateCount++;//冲突，冲突次数++
