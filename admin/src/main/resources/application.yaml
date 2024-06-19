@@ -13,4 +13,12 @@ spring:
       password: 123456
 short-link:
   group:
+    #一个用户最大分组数
     max-num: 20
+  flow-limit:
+    #流量风控开启
+    enable: true
+    #时间窗口周期（s）
+    time-window: 2
+    #时间窗口周期内能操作api的最大次数
+    max-access-count: 20
