@@ -124,15 +124,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         try {
             baseMapper.insert(shortLinkDO);
             shortLinkGotoMapper.insert(linkGotoDO);//短链接跳转表增加记录
-        }catch (DuplicateKeyException ex){//创建短链接时防止布隆过滤器误判(返回存在，可能不存在)，使用Mysql的key冲突判断
-            //已经误判的短链接如何处理？查数据库确认是否存在
-            LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                    .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
-            ShortLinkDO hasShortLinkDO = baseMapper.selectOne(queryWrapper);
-            if (hasShortLinkDO!=null){//数据库确认存在
-                log.warn("短链接{}重复入库！",fullShortUrl);
-                throw new ServiceException("短链接生成重复！");
-            }
+        }catch (DuplicateKeyException ex){//创建短链接时防止布隆过滤器误判(按照返回不存在，则一定不存在 (返回存在，则可能不存在))
+            throw new ServiceException(String.format("短链接：%s 生成重复", fullShortUrl));//直接抛出生成短链接重复，这样即使误判本不存在的短链接存在，也只需要重新生成一个新的短链接即可（只需要保证短链接的唯一性）
         }
         //缓存预热
         stringRedisTemplate.opsForValue().set(
@@ -507,10 +500,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new SecurityException("短链接频繁生成，请稍后再试！");
             }
             String originUrl = requestParam.getOriginUrl();
-            originUrl+=System.currentTimeMillis();//相当于加盐，生成新的shortUri，降低哈希冲突概率
+            originUrl += UUID.randomUUID().toString();//相当于加盐，生成新的shortUri，降低哈希冲突概率
             shortUri=HashUtil.hashToBase62(originUrl);
             //使用布隆过滤器防止直接查询数据库,验证短链接是否冲突（重复）
-            if(!shortUricachePenetrationBloomFilter.contains(createShortLinkDefaultDomain + "/" + shortUri)){
+            if(!shortUricachePenetrationBloomFilter.contains(createShortLinkDefaultDomain + "/" + shortUri)){//布隆过滤器里面不存在，则一定不存在
                 break;//新的ShortUri，不冲突，保留
             }
             costomGenerateCount++;//冲突，冲突次数++
