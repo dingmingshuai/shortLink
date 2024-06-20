@@ -27,6 +27,7 @@ import java.util.Map;
  * @Create2024/5/31 16:37
  * @Version 1.0
  */
+
 public interface ShortLinkRemoteService {
     /**
      * 创建短链接

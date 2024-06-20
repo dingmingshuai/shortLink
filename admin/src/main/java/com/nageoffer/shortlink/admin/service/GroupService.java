@@ -17,6 +17,7 @@ import java.util.List;
  * @Version 1.0
  */
 public interface GroupService extends IService <GroupDO>{
+
     /**
      * 新增短链接分组
      * @param groupName 短链接分组名

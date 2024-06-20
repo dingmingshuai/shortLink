@@ -15,7 +15,7 @@ import com.nageoffer.shortlink.admin.dao.mapper.GroupMapper;
 import com.nageoffer.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.nageoffer.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import com.nageoffer.shortlink.admin.remote.ShortLinkRemoteService;
+import com.nageoffer.shortlink.admin.remote.ShortLinkActualRemoteService;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.admin.service.GroupService;
 import com.nageoffer.shortlink.admin.toolkit.RandomGenerator;
@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Objects;
@@ -46,12 +45,9 @@ import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.L
 public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
     private final RedissonClient redissonClient;//分布式锁限制创建分组数量，防止同一用户在不同线程（可能同一用户在多个设备）同时新增分组，而超出最大分组数
-    @Value("${short-link.group.max-num}")
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;// //重构为SpringCloud Feign 调用
     private Integer groupMaxNum;
 
-    //TODO 后续重构为SpringCloud Feign 调用
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
-    };
     @Override
     public void saveGroup(String groupName) {
         saveGroup(UserContext.getUsername(),groupName);
@@ -93,8 +89,8 @@ public class GroupServiceImp extends ServiceImpl<GroupMapper, GroupDO> implement
                 .eq(GroupDO::getUsername, UserContext.getUsername())
                 .orderByDesc(List.of(GroupDO::getSortOrder, GroupDO::getUpdateTime));//先按SortOrder字段排序，再按更新时间排序
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        //简陋HTTP远程调用
-        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteService
+        //SpringCloud Feign 远程调用
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkActualRemoteService
                 .listGroupShortLinkCount(groupDOList.stream().map(GroupDO::getGid).toList());
         List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
         shortLinkGroupRespDTOList.forEach(each -> {
