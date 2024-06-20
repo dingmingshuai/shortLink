@@ -92,6 +92,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;//创建短链接时的默认域名
+    @Transactional(rollbackFor = Exception.class)//创建短链接增加事务方法,生成短链接异常时，回滚
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         verificationWhitelist(requestParam.getOriginUrl());//验证原始链接是否在白名单内
