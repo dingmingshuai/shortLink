@@ -86,7 +86,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;//统计访问短链接网络信息
     private final LinkStatsTodayMapper linkStatsTodayMapper;//统计今日访问短链接信息
     private final LinkStatsTodayService linkStatsTodayService;
-    ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;//短链接消息队列生产者组
+    private final ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;//短链接消息队列生产者组
     private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;//短链接跳转白名单
 
 
