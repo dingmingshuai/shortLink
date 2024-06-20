@@ -1,5 +1,6 @@
 package com.nageoffer.shortlink.project.mq.producer;
 
+import cn.hutool.core.lang.UUID;
 import com.nageoffer.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBlockingDeque;
@@ -31,6 +32,7 @@ public class DelayShortLinkStatsProducer {
      * @param statsRecord 短链接统计实体参数
      */
     public void send(ShortLinkStatsRecordDTO statsRecord) {
+        statsRecord.setKeys(UUID.fastUUID().toString());//设置消息队列唯一标识
         RBlockingDeque<ShortLinkStatsRecordDTO> blockingDeque = redissonClient.getBlockingDeque(DELAY_QUEUE_STATS_KEY);
         RDelayedQueue<ShortLinkStatsRecordDTO> delayedQueue = redissonClient.getDelayedQueue(blockingDeque);
         delayedQueue.offer(statsRecord, 5, TimeUnit.SECONDS);
