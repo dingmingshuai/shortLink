@@ -25,7 +25,7 @@ import java.util.List;
  * @Create2024/6/20 19:45
  * @Version 1.0
  */
-@FeignClient("short-link-project")
+@FeignClient(value = "short-link-project", url = "${aggregation.remote-url:}")
 public interface ShortLinkActualRemoteService {
 
     /**
