@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
 import com.nageoffer.shortlink.admin.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
@@ -41,6 +43,7 @@ import static com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum.*;
  * ClassName:UserServiceImpl
  * Description:
  * 用户接口实现层
+ *
  * @Author DubPAN
  * @Create2024/5/18 16:17
  * @Version 1.0
@@ -56,16 +59,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final StringRedisTemplate stringRedisTemplate;
     //用户注册后设置短链接默认分组
     private final GroupService groupService;
+
     @Override
     public UserRespDTO getUserByUsername(String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
                 .eq(UserDO::getUsername, username);
         UserDO userDO = baseMapper.selectOne(queryWrapper);
-        if (userDO == null){//测试全局异常拦截器
+        if (userDO == null) {//测试全局异常拦截器
             throw new ClientException(UserErrorCodeEnum.USER_NULL);
         }
         UserRespDTO result = new UserRespDTO();
-        BeanUtils.copyProperties(userDO,result);
+        BeanUtils.copyProperties(userDO, result);
         return result;
     }
 
@@ -77,28 +81,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public void register(UserRegisterReqDTO requestParam) {
-        if(!hasUsername(requestParam.getUsername())){
+        if (!hasUsername(requestParam.getUsername())) {
             throw new ClientException(USER_NAME_EXIST);
         }
         //通过分布式锁，锁定用户名进行串行执行，防止恶意请求利用未注册用户名将请求打到数据库。
-        RLock lock = redissonClient.getLock(LOCK_USER_REGISTER_KEY+requestParam.getUsername());
+        RLock lock = redissonClient.getLock(LOCK_USER_REGISTER_KEY + requestParam.getUsername());
+        if (!lock.tryLock()) {
+            throw new ClientException(USER_NAME_EXIST);//没获取到锁，抛出异常：用户名已存在
+        }
         try {
-            if (lock.tryLock()){
-                try {
-                    int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));
-                    if(inserted<1){
-                        throw new ClientException(USER_SAVE_ERROR);
-                    }
-                }catch (DuplicateKeyException ex){//重复注册
-                    throw new ClientException(USER_EXIST);
-                }
-
-                //对用户名使用布隆过滤器加载缓存，判断用户是否存在
-                userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
-                groupService.saveGroup(requestParam.getUsername(),"默认分组");
-                return;//获取到锁，结束
+            int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));//inserted 是新增的条目数量
+            if (inserted < 1) {
+                throw new ClientException(USER_SAVE_ERROR);
             }
-            throw  new ClientException(USER_NAME_EXIST);//没获取到锁，抛出异常：用户名已存在
+            //对用户名使用布隆过滤器加载缓存，判断用户是否存在
+            userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+            groupService.saveGroup(requestParam.getUsername(), "默认分组");
+        } catch (DuplicateKeyException ex) {//重复注册
+            throw new ClientException(USER_EXIST);
         } finally {
             lock.unlock();
         }
@@ -106,10 +106,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public void update(UserUpdateReqDTO requestParam) {
-        // TODO 验证当前用户名是否为登录用户
+        // 验证当前用户名是否为登录用户
+        if (!Objects.equals(requestParam.getUsername(), UserContext.getUsername())){
+            throw new ClientException("当前登录用户信息异常！");
+        };
         LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class)
                 .eq(UserDO::getUsername, requestParam.getUsername());
-        baseMapper.update(BeanUtil.toBean(requestParam,UserDO.class),updateWrapper);
+        baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), updateWrapper);
     }
 
     @Override
@@ -119,7 +122,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .eq(UserDO::getPassword, requestParam.getPassword())
                 .eq(UserDO::getDelFlag, 0);//未被删除的
         UserDO userDO = baseMapper.selectOne(queryWrapper);
-        if (userDO == null){
+        if (userDO == null) {
             throw new ClientException("用户不存在！");
         }
         //存储用户名对应的键下存储了多个登录会话（每个登录会话可能包含不同的token或其他信息）允许用户做多端登录
@@ -151,7 +154,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
-    public Boolean checkLogin(String username,String token) {
+    public Boolean checkLogin(String username, String token) {
         System.out.println(stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token));
         return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token) != null;
     }
@@ -159,8 +162,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     public void logout(String username, String token) {
         //要退出，需要先验证登陆状态
-        if(checkLogin(username,token)){
-            stringRedisTemplate.delete(USER_LOGIN_KEY+username);
+        if (checkLogin(username, token)) {
+            stringRedisTemplate.delete(USER_LOGIN_KEY + username);
             return;
         }
         throw new ClientException("用户token未存在或用户未登录！");
