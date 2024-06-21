@@ -125,6 +125,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         //存储用户名对应的键下存储了多个登录会话（每个登录会话可能包含不同的token或其他信息）允许用户做多端登录
         Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + requestParam.getUsername());
         if (CollUtil.isNotEmpty(hasLoginMap)) {
+            stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES);//每词有已登录用户调用api，那么重新刷新用户有效期。
             String token = hasLoginMap.keySet().stream()
                     .findFirst()
                     .map(Object::toString)
