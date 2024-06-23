@@ -20,6 +20,7 @@ import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.D
  * @Create2024/6/17 20:29
  * @Version 1.0
  */
+@Deprecated//@Deprecated 表示此方法已废弃、暂时可用，但以后此类或方法都不会再更新、后期可能会删除，建议后来人不要调用此方法。
 @Component
 @RequiredArgsConstructor
 public class DelayShortLinkStatsProducer {

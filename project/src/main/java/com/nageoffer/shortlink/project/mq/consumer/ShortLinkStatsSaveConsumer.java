@@ -106,6 +106,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
        }catch(Throwable ex){
            messageQueueIdempotentHandler.delMessageProcessed(id.toString());//如果消息处理遇到异常情况，删除幂等标识
            log.error("记录短链接监控消费异常！",ex);
+           throw ex;//幂等处理向上抛出异常
        }
        messageQueueIdempotentHandler.setAccomplish(id.toString());//设置消息处理完成标识
     }
@@ -114,10 +115,12 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
         RLock rLock = readWriteLock.readLock();
-        if (!rLock.tryLock()) {
-            delayShortLinkStatsProducer.send(statsRecord);
-            return;
-        }
+        //取消延迟队列的使用
+//        if (!rLock.tryLock()) {
+//            delayShortLinkStatsProducer.send(statsRecord);
+//            return;
+//        }
+        rLock.lock();
         try {
             if (StrUtil.isBlank(gid)) {
                 LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)

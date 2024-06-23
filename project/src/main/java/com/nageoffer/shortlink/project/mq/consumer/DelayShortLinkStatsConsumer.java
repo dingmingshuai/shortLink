@@ -26,6 +26,7 @@ import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.D
  * @Version 1.0
  */
 @Slf4j
+@Deprecated//@Deprecated 表示此方法已废弃、暂时可用，但以后此类或方法都不会再更新、后期可能会删除，建议后来人不要调用此方法。
 @Component
 @RequiredArgsConstructor
 public class DelayShortLinkStatsConsumer implements InitializingBean {
@@ -42,7 +43,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
                             thread.setDaemon(Boolean.TRUE);
                             return thread;
                         })
-                .execute(() -> {
+                .execute(() -> {//加入延迟队列
                     RBlockingDeque<ShortLinkStatsRecordDTO> blockingDeque = redissonClient.getBlockingDeque(DELAY_QUEUE_STATS_KEY);
                     RDelayedQueue<ShortLinkStatsRecordDTO> delayedQueue = redissonClient.getDelayedQueue(blockingDeque);
                     for (; ; ) {
@@ -74,6 +75,6 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        onMessage();
+//        onMessage();  //开启延迟队列
     }
 }

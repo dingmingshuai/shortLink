@@ -207,9 +207,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } else { //gid被修改无法找到,即与数据库不一致
             RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, requestParam.getFullShortUrl()));
             RLock rLock = readWriteLock.writeLock();
-            if (!rLock.tryLock()) {
-                throw new ServiceException("短链接正在被访问，请稍后再试...");
-            }
+            //加入消息队列后，由固定的几个线程拉去消息进行消费，不会有大量读线程并发等待，所以删去延迟队列及尝试获取读锁
+//            if (!rLock.tryLock()) {
+//                throw new ServiceException("短链接正在被访问，请稍后再试...");
+//            }
+            rLock.lock();//直接锁，因为加入消息队列后，由固定的几个线程拉去消息进行消费，最多也就等待这几个线程读取完
             try {
                 LambdaUpdateWrapper<ShortLinkDO> linkUpdateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
                         .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
