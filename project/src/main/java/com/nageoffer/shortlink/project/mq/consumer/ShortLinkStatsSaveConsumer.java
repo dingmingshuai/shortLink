@@ -105,6 +105,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
            stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());//redis中消费完，直接删除缓存，节省内存
        }catch(Throwable ex){
            messageQueueIdempotentHandler.delMessageProcessed(id.toString());//如果消息处理遇到异常情况，删除幂等标识
+           //某某情况宕机了
            log.error("记录短链接监控消费异常！",ex);
            throw ex;//幂等处理向上抛出异常
        }
