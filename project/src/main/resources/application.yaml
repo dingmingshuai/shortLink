@@ -49,7 +49,18 @@ short-link:
         - zhihu.com
         - juejin.cn
         - cnblogs.com
-
+rocketmq:
+  #使用公用的rocketmq(云中间件)
+  name-server: common-rocketmq-dev.magestack.cn:9876
+  producer:
+    group: short-link_project-service_stats-save_pg_DMS
+    topic: short-link_project-service_topic
+    #全局超时时间
+    send-message-timeout: 2000
+    retry-times-when-send-failed: 1
+    retry-times-when-send-async-failed: 1
+  consumer:
+    group: short-link_project-service_stats-save_cg
 
 
 
